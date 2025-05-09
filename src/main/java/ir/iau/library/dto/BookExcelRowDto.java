@@ -22,6 +22,10 @@ public class BookExcelRowDto {
     @Pattern(regexp = "\\d{13}", message = "شابک باید ۱۳ رقم باشد")
     private String isbn13;
 
+    private String isbn10;
+
+    private String description;
+
     private String subject;
 
     @PastOrPresent(message = "تاریخ انتشار نمی‌تواند در آینده باشد")

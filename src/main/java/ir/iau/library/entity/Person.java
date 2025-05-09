@@ -1,5 +1,6 @@
 package ir.iau.library.entity;
 
+import ir.iau.library.dto.PersonExcelRowDto;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.envers.Audited;
@@ -34,4 +35,11 @@ public class Person {
 
     @OneToMany(mappedBy = "person", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<BookLoan> loans = new ArrayList<>();
+
+    public Person(PersonExcelRowDto personExcelRowDto) {
+        this.firstName = personExcelRowDto.getFirstName();
+        this.lastName = personExcelRowDto.getLastName();
+        this.email = personExcelRowDto.getEmail();
+        this.phone = personExcelRowDto.getPhone();
+    }
 }

@@ -1,140 +1,91 @@
 package ir.iau.library.service;
 
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import ir.iau.library.dto.BookExcelRowDto;
 import ir.iau.library.dto.PersonExcelRowDto;
 import ir.iau.library.entity.Book;
 import ir.iau.library.entity.Person;
 import ir.iau.library.repository.BookRepository;
 import ir.iau.library.repository.PersonRepository;
-import jakarta.transaction.Transactional;
-import jakarta.validation.ConstraintViolation;
-import jakarta.validation.Validator;
-import jakarta.validation.ValidatorFactory;
-import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.InputStream;
-import java.time.LocalDate;
-import java.util.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 @Service
 public class ExcelImportService {
+
     private final BookRepository bookRepository;
     private final PersonRepository personRepository;
-    private final Validator validator;
 
-    public ExcelImportService(BookRepository bookRepository,
-                              PersonRepository personRepository,
-                              ValidatorFactory validatorFactory) {
+    @Autowired
+    public ExcelImportService(BookRepository bookRepository, PersonRepository personRepository) {
         this.bookRepository = bookRepository;
         this.personRepository = personRepository;
-        this.validator = validatorFactory.getValidator();
     }
 
-    @Transactional
-    public Map<Integer, List<String>> importBooks(MultipartFile file) throws Exception {
-        Map<Integer, List<String>> errorMap = new HashMap<>();
-        try (InputStream in = file.getInputStream();
-             Workbook workbook = new XSSFWorkbook(in)) {
+    public List<BookExcelRowDto> importBooksFromExcel(MultipartFile file) throws IOException, InvalidFormatException {
+        List<BookExcelRowDto> bookDtos = new ArrayList<>();
 
+        try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
             Sheet sheet = workbook.getSheetAt(0);
-            for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
-                Row row = sheet.getRow(rowIndex);
-                if (row == null) continue;
+            Iterator<Row> rowIterator = sheet.iterator();
 
-                BookExcelRowDto dto = BookExcelRowDto.builder()
-                        .title(getCell(row, 0))
-                        .author(getCell(row, 1))
-                        .translator(getCell(row, 2))
-                        .isbn13(getCell(row, 3))
-                        .subject(getCell(row, 4))
-                        .publicationDate(parseDate(getCell(row, 5)))
-                        .build();
+            while (rowIterator.hasNext()) {
+                Row row = rowIterator.next();
+                if (row.getRowNum() == 0) continue;  // Skip header row
 
-                Set<ConstraintViolation<BookExcelRowDto>> violations = validator.validate(dto);
-                if (!violations.isEmpty()) {
-                    List<String> messages = new ArrayList<>();
-                    violations.forEach(v -> messages.add(v.getPropertyPath() + ": " + v.getMessage()));
-                    errorMap.put(rowIndex + 1, messages); // شماره سطر +1 برای هماهنگی با Excel
-                    continue;
-                }
+                // Read data from each cell and convert to DTO
+                BookExcelRowDto bookDto = new BookExcelRowDto();
+                bookDto.setIsbn10(row.getCell(0).getStringCellValue());
+                bookDto.setTitle(row.getCell(1).getStringCellValue());
+                bookDto.setAuthor(row.getCell(2).getStringCellValue());
+                bookDto.setTranslator(row.getCell(3).getStringCellValue());
+                bookDto.setDescription(row.getCell(4).getStringCellValue());
+                bookDtos.add(bookDto);
 
-                // تبدیل DTO به Entity و ذخیره
-                Book book = Book.builder()
-                        .title(dto.getTitle())
-                        .author(dto.getAuthor())
-                        .translator(dto.getTranslator())
-                        .isbn13(dto.getIsbn13())
-                        .subject(dto.getSubject())
-                        .publicationDate(dto.getPublicationDate())
-                        .active(true)
-                        .build();
+                // Save to DB (optional, for large files, you might batch these operations)
+                Book book = new Book(bookDto);
                 bookRepository.save(book);
             }
         }
-        return errorMap;
+
+        return bookDtos;
     }
 
-    @Transactional
-    public Map<Integer, List<String>> importPersons(MultipartFile file) throws Exception {
-        Map<Integer, List<String>> errorMap = new HashMap<>();
-        try (InputStream in = file.getInputStream();
-             Workbook workbook = new XSSFWorkbook(in)) {
+    public List<PersonExcelRowDto> importPersonsFromExcel(MultipartFile file) throws IOException, InvalidFormatException {
+        List<PersonExcelRowDto> personDtos = new ArrayList<>();
 
+        try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
             Sheet sheet = workbook.getSheetAt(0);
-            for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
-                Row row = sheet.getRow(rowIndex);
-                if (row == null) continue;
+            Iterator<Row> rowIterator = sheet.iterator();
 
-                PersonExcelRowDto dto = PersonExcelRowDto.builder()
-                        .firstName(getCell(row, 0))
-                        .lastName(getCell(row, 1))
-                        .email(getCell(row, 2))
-                        .phone(getCell(row, 3))
-                        .birthDate(parseDate(getCell(row, 4)))
-                        .build();
+            while (rowIterator.hasNext()) {
+                Row row = rowIterator.next();
+                if (row.getRowNum() == 0) continue;  // Skip header row
 
-                Set<ConstraintViolation<PersonExcelRowDto>> violations = validator.validate(dto);
-                if (!violations.isEmpty()) {
-                    List<String> messages = new ArrayList<>();
-                    violations.forEach(v -> messages.add(v.getPropertyPath() + ": " + v.getMessage()));
-                    errorMap.put(rowIndex + 1, messages);
-                    continue;
-                }
+                // Read data from each cell and convert to DTO
+                PersonExcelRowDto personDto = new PersonExcelRowDto();
+                personDto.setFirstName(row.getCell(0).getStringCellValue());
+                personDto.setLastName(row.getCell(1).getStringCellValue());
+                personDto.setEmail(row.getCell(2).getStringCellValue());
+                personDto.setPhone(row.getCell(3).getStringCellValue());
+                personDtos.add(personDto);
 
-                Person person = Person.builder()
-                        .firstName(dto.getFirstName())
-                        .lastName(dto.getLastName())
-                        .email(dto.getEmail())
-                        .phone(dto.getPhone())
-                        .birthDate(dto.getBirthDate())
-                        .membershipDate(LocalDate.now())
-                        .membershipType("STANDARD")
-                        .active(true)
-                        .build();
+                // Save to DB
+                Person person = new Person(personDto);
                 personRepository.save(person);
             }
         }
-        return errorMap;
-    }
 
-    // متد کمکی برای خواندن مقدار سلول به رشته
-    private String getCell(Row row, int idx) {
-        Cell cell = row.getCell(idx, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
-        if (cell == null) return null;
-        return switch (cell.getCellType()) {
-            case STRING -> cell.getStringCellValue().trim();
-            case NUMERIC -> DateUtil.isCellDateFormatted(cell)
-                    ? cell.getLocalDateTimeCellValue().toLocalDate().toString()
-                    : String.valueOf((long) cell.getNumericCellValue());
-            default -> null;
-        };
-    }
-
-    private LocalDate parseDate(String text) {
-        if (text == null) return null;
-        return LocalDate.parse(text);
+        return personDtos;
     }
 }

@@ -1,5 +1,6 @@
 package ir.iau.library.entity;
 
+import ir.iau.library.dto.BookExcelRowDto;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.envers.Audited;
@@ -26,6 +27,7 @@ public class Book {
     private String publisher;
     private String isbn10;
     private String isbn13;
+    private String description;
     private String deweyDecimal;
     private String congressClassification;
     private String subject;
@@ -39,4 +41,12 @@ public class Book {
 
     @OneToMany(mappedBy = "book", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<BookLoan> loans = new ArrayList<>();
+
+    public Book(BookExcelRowDto bookExcelRowDto) {
+        this.isbn10 = bookExcelRowDto.getIsbn10();
+        this.title = bookExcelRowDto.getTitle();
+        this.author = bookExcelRowDto.getAuthor();
+        this.translator = bookExcelRowDto.getTranslator();
+        this.description = bookExcelRowDto.getDescription();
+    }
 }

@@ -1,64 +1,46 @@
 package ir.iau.library.controller;
 
+import ir.iau.library.dto.BookExcelRowDto;
+import ir.iau.library.dto.PersonExcelRowDto;
 import ir.iau.library.service.ExcelImportService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
-@RequestMapping("/api/import")
-@RequiredArgsConstructor
+@RequestMapping("/api/excel-import")
 public class ExcelImportController {
 
-    private final ExcelImportService importService;
+    private final ExcelImportService excelImportService;
+
+    @Autowired
+    public ExcelImportController(ExcelImportService excelImportService) {
+        this.excelImportService = excelImportService;
+    }
 
     @PostMapping("/books")
-    public ResponseEntity<?> uploadBooks(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<String> importBooks(@RequestPart("file") MultipartFile file) {
         try {
-            if (!file.getOriginalFilename().endsWith(".xlsx")) {
-                return ResponseEntity.badRequest().body("فرمت فایل باید .xlsx باشد");
-            }
-            Map<Integer, List<String>> errors = importService.importBooks(file);
-            if (errors.isEmpty()) {
-                return ResponseEntity.ok("تمام کتاب‌ها با موفقیت بارگذاری شدند");
-            } else {
-                return ResponseEntity
-                        .status(HttpStatus.UNPROCESSABLE_ENTITY)
-                        .body(errors);
-            }
-        } catch (Exception ex) {
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("خطا در پردازش فایل: " + ex.getMessage());
+            List<BookExcelRowDto> books = excelImportService.importBooksFromExcel(file);
+            return ResponseEntity.ok("Books successfully imported. Total records: " + books.size());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error importing books: " + e.getMessage());
         }
     }
 
     @PostMapping("/persons")
-    public ResponseEntity<?> uploadPersons(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<String> importPersons(@RequestPart("file") MultipartFile file) {
         try {
-            if (!file.getOriginalFilename().endsWith(".xlsx")) {
-                return ResponseEntity.badRequest().body("فرمت فایل باید .xlsx باشد");
-            }
-            Map<Integer, List<String>> errors = importService.importPersons(file);
-            if (errors.isEmpty()) {
-                return ResponseEntity.ok("تمام افراد با موفقیت بارگذاری شدند");
-            } else {
-                return ResponseEntity
-                        .status(HttpStatus.UNPROCESSABLE_ENTITY)
-                        .body(errors);
-            }
-        } catch (Exception ex) {
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("خطا در پردازش فایل: " + ex.getMessage());
+            List<PersonExcelRowDto> persons = excelImportService.importPersonsFromExcel(file);
+            return ResponseEntity.ok("Persons successfully imported. Total records: " + persons.size());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error importing persons: " + e.getMessage());
         }
     }
 }
