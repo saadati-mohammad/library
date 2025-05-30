@@ -2,6 +2,7 @@ package ir.iau.library.service;
 
 import ir.iau.library.dto.BookLoanFilterDto;
 import ir.iau.library.dto.BookLoanRequestDto;
+import ir.iau.library.dto.BookLoanUpdateDto;
 import ir.iau.library.entity.Book;
 import ir.iau.library.entity.BookLoan;
 import ir.iau.library.entity.LoanStatus;
@@ -123,4 +124,44 @@ public class BookLoanService {
             mailSender.send(message);
         }
     }
+
+    public BookLoan updateLoan(BookLoanUpdateDto dto) {
+        BookLoan loan = loanRepository.findById(dto.getLoanId())
+                .orElseThrow(() -> new RuntimeException("Loan not found with id " + dto.getLoanId()));
+
+        if (dto.getLoanDate() != null) {
+            loan.setLoanDate(dto.getLoanDate());
+        }
+
+        if (dto.getDueDate() != null) {
+            loan.setDueDate(dto.getDueDate());
+        }
+
+        if (dto.getReturnDate() != null) {
+            loan.setReturnDate(dto.getReturnDate());
+        }
+
+        if (dto.getStatus() != null) {
+            loan.setStatus(dto.getStatus());
+        }
+
+        if (dto.getLateFee() != null) {
+            loan.setLateFee(dto.getLateFee());
+        }
+
+        if (dto.getPersonId() != null) {
+            Person person = personRepository.findById(dto.getPersonId())
+                    .orElseThrow(() -> new RuntimeException("Person not found with id " + dto.getPersonId()));
+            loan.setPerson(person);
+        }
+
+        if (dto.getBookId() != null) {
+            Book book = bookRepository.findById(dto.getBookId())
+                    .orElseThrow(() -> new RuntimeException("Book not found with id " + dto.getBookId()));
+            loan.setBook(book);
+        }
+
+        return loanRepository.save(loan);
+    }
+
 }

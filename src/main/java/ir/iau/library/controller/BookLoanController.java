@@ -2,6 +2,7 @@ package ir.iau.library.controller;
 
 import ir.iau.library.dto.BookLoanFilterDto;
 import ir.iau.library.dto.BookLoanRequestDto;
+import ir.iau.library.dto.BookLoanUpdateDto;
 import ir.iau.library.entity.BookLoan;
 import ir.iau.library.service.BookLoanService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +26,7 @@ public class BookLoanController {
         return ResponseEntity.status(201).body(loan);
     }
 
-    @PutMapping("/{loanId}/return")
+    @PutMapping("/return/{loanId}")
     public ResponseEntity<BookLoan> returnBook(
             @PathVariable Long loanId,
             @RequestParam("date")
@@ -57,6 +58,11 @@ public class BookLoanController {
     @GetMapping("/search")
     public List<BookLoan> searchLoans(@RequestBody BookLoanFilterDto filterDto) {
         return loanService.searchLoans(filterDto);
+    }
+
+    @PutMapping("/update")
+    public BookLoan updateLoan(@RequestBody BookLoanUpdateDto dto) {
+        return loanService.updateLoan(dto);
     }
 
 }
