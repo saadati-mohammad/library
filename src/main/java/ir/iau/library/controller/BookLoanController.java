@@ -1,5 +1,6 @@
 package ir.iau.library.controller;
 
+import ir.iau.library.dto.BookLoanFilterDto;
 import ir.iau.library.dto.BookLoanRequestDto;
 import ir.iau.library.entity.BookLoan;
 import ir.iau.library.service.BookLoanService;
@@ -33,23 +34,29 @@ public class BookLoanController {
         return ResponseEntity.ok(updated);
     }
 
-    @GetMapping("/overdue")
-    public List<BookLoan> getOverdueLoans() {
-        return loanService.getOverdueLoans();
-    }
-
-    @GetMapping("/report")
-    public long countLoansBetween(
-            @RequestParam("start")
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
-            @RequestParam("end")
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end) {
-        return loanService.countLoansBetween(start, end);
-    }
+//    @GetMapping("/overdue")
+//    public List<BookLoan> getOverdueLoans() {
+//        return loanService.getOverdueLoans();
+//    }
+//
+//    @GetMapping("/report")
+//    public long countLoansBetween(
+//            @RequestParam("start")
+//            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
+//            @RequestParam("end")
+//            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end) {
+//        return loanService.countLoansBetween(start, end);
+//    }
 
     @PostMapping("/reminders")
     public ResponseEntity<Void> sendReminders() {
         loanService.sendDueReminders();
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping("/search")
+    public List<BookLoan> searchLoans(@RequestBody BookLoanFilterDto filterDto) {
+        return loanService.searchLoans(filterDto);
+    }
+
 }

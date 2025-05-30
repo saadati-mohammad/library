@@ -1,5 +1,6 @@
 package ir.iau.library.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import ir.iau.library.dto.PersonExcelRowDto;
 import jakarta.persistence.*;
 import lombok.*;
@@ -34,6 +35,7 @@ public class Person {
     private Boolean active = true; // deactivate flag
 
     @OneToMany(mappedBy = "person", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<BookLoan> loans = new ArrayList<>();
 
     public Person(PersonExcelRowDto personExcelRowDto) {

@@ -1,5 +1,6 @@
 package ir.iau.library.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import ir.iau.library.dto.BookExcelRowDto;
 import jakarta.persistence.*;
 import lombok.*;
@@ -40,6 +41,7 @@ public class Book {
     private Boolean active = true; // soft delete flag
 
     @OneToMany(mappedBy = "book", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<BookLoan> loans = new ArrayList<>();
 
     public Book(BookExcelRowDto bookExcelRowDto) {
