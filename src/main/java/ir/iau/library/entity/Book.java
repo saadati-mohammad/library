@@ -38,6 +38,12 @@ public class Book {
     private Integer pageCount;
     private String language;
     private String edition;
+    private Integer copyCount;
+    private String librarySection; // بخش کتابخانه (مثلاً: علوم انسانی، مهندسی)
+    private String shelfCode;      // کد یا شماره قفسه (مثلاً: A3, B5)
+    private String rowNumber;      // ردیف (مثلاً: ردیف 2)
+    private String columnNumber;   // ستون (مثلاً: ستون 4)
+    private String positionNote;   // توضیح اضافی درباره مکان یا شرایط خاص نگهداری
     private Boolean active = true; // soft delete flag
 
     @OneToMany(mappedBy = "book", cascade = CascadeType.ALL, orphanRemoval = true)

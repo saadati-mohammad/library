@@ -22,7 +22,6 @@ public class BookService {
     }
 
     public Book createBook(Book book) {
-        book.setActive(true);
         return bookRepository.save(book);
     }
 
