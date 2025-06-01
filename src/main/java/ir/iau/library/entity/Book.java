@@ -44,7 +44,7 @@ public class Book {
     private String rowNumber;      // ردیف (مثلاً: ردیف 2)
     private String columnNumber;   // ستون (مثلاً: ستون 4)
     private String positionNote;   // توضیح اضافی درباره مکان یا شرایط خاص نگهداری
-    private Boolean active = true; // soft delete flag
+    private Boolean active; // soft delete flag
 
     @OneToMany(mappedBy = "book", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
