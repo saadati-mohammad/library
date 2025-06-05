@@ -38,6 +38,8 @@ public class Book {
     private LocalDate publicationDate;
     private Integer pageCount;
     private String language;
+    @Lob
+    @Column(name = "book_cover_file"/*, columnDefinition="BLOB" or "LONGBLOB" or "BYTEA" if needed for specific DB */)
     private byte[] bookCoverFile;
     private String edition;
     private Integer copyCount;
