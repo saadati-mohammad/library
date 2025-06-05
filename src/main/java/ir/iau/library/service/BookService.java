@@ -61,7 +61,7 @@ public class BookService {
         book.setCopyCount(bookDetails.getCopyCount()); // اضافه شده
         book.setLibrarySection(bookDetails.getLibrarySection()); // اضافه شده
         book.setShelfCode(bookDetails.getShelfCode()); // اضافه شده
-        book.setRowNumber(bookDetails.getRowNumber()); // اضافه شده
+        book.setRowNumbers(bookDetails.getRowNumbers()); // اضافه شده
         book.setColumnNumber(bookDetails.getColumnNumber()); // اضافه شده
         book.setPositionNote(bookDetails.getPositionNote()); // اضافه شده
         book.setActive(bookDetails.getActive()); // اضافه شده
@@ -99,7 +99,7 @@ public class BookService {
         book.setCopyCount(bookDetails.getCopyCount());
         book.setLibrarySection(bookDetails.getLibrarySection());
         book.setShelfCode(bookDetails.getShelfCode());
-        book.setRowNumber(bookDetails.getRowNumber());
+        book.setRowNumbers(bookDetails.getRowNumbers());
         book.setColumnNumber(bookDetails.getColumnNumber());
         book.setPositionNote(bookDetails.getPositionNote());
         book.setActive(bookDetails.getActive());

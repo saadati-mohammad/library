@@ -38,14 +38,17 @@ public class Book {
     private LocalDate publicationDate;
     private Integer pageCount;
     private String language;
+
     @Lob
-    @Column(name = "book_cover_file"/*, columnDefinition="BLOB" or "LONGBLOB" or "BYTEA" if needed for specific DB */)
+    @Basic(fetch = FetchType.LAZY)
+    @Column(name = "book_cover_file", columnDefinition = "LONGBLOB")
     private byte[] bookCoverFile;
+
     private String edition;
     private Integer copyCount;
     private String librarySection; // بخش کتابخانه (مثلاً: علوم انسانی، مهندسی)
     private String shelfCode;      // کد یا شماره قفسه (مثلاً: A3, B5)
-    private String rowNumber;      // ردیف (مثلاً: ردیف 2)
+    private String rowNumbers;      // ردیف (مثلاً: ردیف 2)
     private String columnNumber;   // ستون (مثلاً: ستون 4)
     @Column(length = 2000)
     private String positionNote;   // توضیح اضافی درباره مکان یا شرایط خاص نگهداری

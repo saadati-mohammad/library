@@ -36,7 +36,7 @@ public class BookFilterDto {
     private Integer copyCount;
     private String librarySection;
     private String shelfCode;
-    private String rowNumber;
+    private String rowNumbers;
     private String columnNumber;
     private String positionNote;
 

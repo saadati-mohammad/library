@@ -79,8 +79,8 @@ public class BookSpecification {
             if (StringUtils.hasText(criteria.getShelfCode())) {
                 predicates.add(cb.like(cb.lower(root.get("shelfCode")), "%" + criteria.getShelfCode().toLowerCase() + "%"));
             }
-            if (StringUtils.hasText(criteria.getRowNumber())) {
-                predicates.add(cb.like(cb.lower(root.get("rowNumber")), "%" + criteria.getRowNumber().toLowerCase() + "%"));
+            if (StringUtils.hasText(criteria.getRowNumbers())) {
+                predicates.add(cb.like(cb.lower(root.get("rowNumbers")), "%" + criteria.getRowNumbers().toLowerCase() + "%"));
             }
             if (StringUtils.hasText(criteria.getColumnNumber())) {
                 predicates.add(cb.like(cb.lower(root.get("columnNumber")), "%" + criteria.getColumnNumber().toLowerCase() + "%"));
