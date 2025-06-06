@@ -1,8 +1,8 @@
 package ir.iau.library.service;
 
+import ir.iau.library.dto.BookLoanDto;
 import ir.iau.library.dto.BookLoanFilterDto;
-import ir.iau.library.dto.BookLoanRequestDto;
-import ir.iau.library.dto.BookLoanUpdateDto;
+import ir.iau.library.dto.CreateLoanRequestDto;
 import ir.iau.library.entity.Book;
 import ir.iau.library.entity.BookLoan;
 import ir.iau.library.entity.LoanStatus;
@@ -10,15 +10,15 @@ import ir.iau.library.entity.Person;
 import ir.iau.library.repository.BookLoanRepository;
 import ir.iau.library.repository.BookRepository;
 import ir.iau.library.repository.PersonRepository;
+import ir.iau.library.specification.BookLoanSpecification;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.jpa.domain.Specification;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.List;
 
 @Service
 @Transactional
@@ -26,142 +26,73 @@ public class BookLoanService {
 
     @Autowired
     private BookLoanRepository loanRepository;
-    @Autowired
-    private BookRepository bookRepository;
-    @Autowired
-    private PersonRepository personRepository;
-    @Autowired
-    private JavaMailSender mailSender;
+    @Autowired private PersonRepository personRepository;
+    @Autowired private BookRepository bookRepository;
 
-    public BookLoan loanBook(BookLoanRequestDto request) {
+    private static final int LOAN_DURATION_DAYS = 14;
+
+    public BookLoanDto createLoan(CreateLoanRequestDto request) {
         Person person = personRepository.findById(request.getPersonId())
-                .orElseThrow(() -> new RuntimeException("Person not found with id " + request.getPersonId()));
+                .orElseThrow(() -> new EntityNotFoundException("Person not found"));
         Book book = bookRepository.findById(request.getBookId())
-                .orElseThrow(() -> new RuntimeException("Book not found with id " + request.getBookId()));
+                .orElseThrow(() -> new EntityNotFoundException("Book not found"));
 
-        BookLoan loan = BookLoan.builder()
+        // Business rule: Person must be active
+        if (!person.getActive()) {
+            throw new IllegalStateException("Person is not active and cannot borrow books.");
+        }
+
+        // Business rule: Book must be available
+        loanRepository.findActiveLoanByBook(book).ifPresent(loan -> {
+            throw new IllegalStateException("Book is currently on loan and not available.");
+        });
+
+        BookLoan newLoan = BookLoan.builder()
                 .person(person)
                 .book(book)
-                .loanDate(request.getLoanDate())
-                .dueDate(request.getDueDate())
+                .loanDate(LocalDate.now())
+                .dueDate(LocalDate.now().plusDays(LOAN_DURATION_DAYS))
                 .status(LoanStatus.ON_LOAN)
-                .lateFee(0.0)
+                .notes(request.getNotes())
                 .build();
 
-        return loanRepository.save(loan);
-    }
-    public List<BookLoan> searchLoans(BookLoanFilterDto filter) {
-        Specification<BookLoan> spec = Specification.where(null);
-
-        if (filter.getBookTitle() != null && !filter.getBookTitle().isBlank()) {
-            spec = spec.and((root, query, cb) ->
-                    cb.like(cb.lower(root.get("book").get("title")), "%" + filter.getBookTitle().toLowerCase() + "%"));
-        }
-
-        if (filter.getPersonName() != null && !filter.getPersonName().isBlank()) {
-            spec = spec.and((root, query, cb) ->
-                    cb.like(cb.lower(root.get("person").get("firstName")), "%" + filter.getPersonName().toLowerCase() + "%"));
-        }
-
-        if (filter.getPersonId() != null) {
-            spec = spec.and((root, query, cb) ->
-                    cb.equal(root.get("person").get("id"), filter.getPersonId()));
-        }
-
-        if (filter.getLoanDate() != null) {
-            spec = spec.and((root, query, cb) ->
-                    cb.equal(root.get("loanDate"), filter.getLoanDate()));
-        }
-
-        if (filter.getDueDate() != null) {
-            spec = spec.and((root, query, cb) ->
-                    cb.equal(root.get("dueDate"), filter.getDueDate()));
-        }
-
-        if (filter.getStatus() != null) {
-            spec = spec.and((root, query, cb) ->
-                    cb.equal(root.get("status"), filter.getStatus()));
-        }
-
-        return loanRepository.findAll(spec);
+        return convertToDto(loanRepository.save(newLoan));
     }
 
-    public BookLoan returnBook(Long loanId, LocalDate returnDate) {
+    public BookLoanDto returnBook(Long loanId) {
         BookLoan loan = loanRepository.findById(loanId)
-                .orElseThrow(() -> new RuntimeException("Loan not found with id " + loanId));
-        loan.setReturnDate(returnDate);
+                .orElseThrow(() -> new EntityNotFoundException("Loan not found"));
 
-        if (returnDate.isAfter(loan.getDueDate())) {
-            long daysOverdue = java.time.temporal.ChronoUnit.DAYS.between(loan.getDueDate(), returnDate);
-            loan.setLateFee(daysOverdue * 1.0);
-            loan.setStatus(LoanStatus.OVERDUE);
-        } else {
-            loan.setStatus(LoanStatus.RETURNED);
+        if (loan.getStatus() == LoanStatus.RETURNED) {
+            throw new IllegalStateException("This book has already been returned.");
         }
 
-        return loanRepository.save(loan);
+        loan.setStatus(LoanStatus.RETURNED);
+        loan.setReturnDate(LocalDate.now());
+
+        return convertToDto(loanRepository.save(loan));
     }
 
-    public List<BookLoan> getOverdueLoans() {
-        return loanRepository.findByDueDateBeforeAndStatus(LocalDate.now(), LoanStatus.ON_LOAN);
+    public Page<BookLoanDto> findAllFiltered(BookLoanFilterDto filter, Pageable pageable) {
+        // You might want a scheduled task to update ON_LOAN to OVERDUE daily
+        // For now, we are not changing the status automatically in this method.
+        Page<BookLoan> loanPage = loanRepository.findAll(BookLoanSpecification.filter(filter), pageable);
+        return loanPage.map(this::convertToDto);
     }
 
-    public long countLoansBetween(LocalDate startDate, LocalDate endDate) {
-        return loanRepository.countByLoanDateBetween(startDate, endDate);
+    private BookLoanDto convertToDto(BookLoan loan) {
+        return BookLoanDto.builder()
+                .id(loan.getId())
+                .loanDate(loan.getLoanDate())
+                .dueDate(loan.getDueDate())
+                .returnDate(loan.getReturnDate())
+                .status(loan.getStatus())
+                .notes(loan.getNotes())
+                .personId(loan.getPerson().getId())
+                .personFirstName(loan.getPerson().getFirstName())
+                .personLastName(loan.getPerson().getLastName())
+                .bookId(loan.getBook().getId())
+                .bookTitle(loan.getBook().getTitle())
+                .build();
     }
-
-    public void sendDueReminders() {
-        List<BookLoan> overdue = getOverdueLoans();
-        for (BookLoan loan : overdue) {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setTo(loan.getPerson().getEmail());
-            message.setSubject("یادآوری بازگشت کتاب");
-            message.setText(String.format("سلام %s،\n\nکتاب «%s» با شناسه امانت %d در تاریخ %s موعد بازگشت داشته و هنوز برگشت نشده.\nلطفاً در اسرع وقت بازگردانید.\n\nبا احترام، کتابخانه",
-                    loan.getPerson().getFirstName(),
-                    loan.getBook().getTitle(),
-                    loan.getId(),
-                    loan.getDueDate()));
-            mailSender.send(message);
-        }
-    }
-
-    public BookLoan updateLoan(BookLoanUpdateDto dto) {
-        BookLoan loan = loanRepository.findById(dto.getLoanId())
-                .orElseThrow(() -> new RuntimeException("Loan not found with id " + dto.getLoanId()));
-
-        if (dto.getLoanDate() != null) {
-            loan.setLoanDate(dto.getLoanDate());
-        }
-
-        if (dto.getDueDate() != null) {
-            loan.setDueDate(dto.getDueDate());
-        }
-
-        if (dto.getReturnDate() != null) {
-            loan.setReturnDate(dto.getReturnDate());
-        }
-
-        if (dto.getStatus() != null) {
-            loan.setStatus(dto.getStatus());
-        }
-
-        if (dto.getLateFee() != null) {
-            loan.setLateFee(dto.getLateFee());
-        }
-
-        if (dto.getPersonId() != null) {
-            Person person = personRepository.findById(dto.getPersonId())
-                    .orElseThrow(() -> new RuntimeException("Person not found with id " + dto.getPersonId()));
-            loan.setPerson(person);
-        }
-
-        if (dto.getBookId() != null) {
-            Book book = bookRepository.findById(dto.getBookId())
-                    .orElseThrow(() -> new RuntimeException("Book not found with id " + dto.getBookId()));
-            loan.setBook(book);
-        }
-
-        return loanRepository.save(loan);
-    }
-
 }

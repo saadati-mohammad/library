@@ -5,30 +5,39 @@ import lombok.*;
 import org.hibernate.envers.Audited;
 
 import java.time.LocalDate;
-
 @Entity
 @Audited
 @Table(name = "book_loans")
-@Getter @Setter @NoArgsConstructor
-@AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class BookLoan {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private LocalDate loanDate;
-    private LocalDate dueDate;
-    private LocalDate returnDate;
-
-    @Enumerated(EnumType.STRING)
-    private LoanStatus status;
-
-    private Double lateFee;
-
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "person_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "person_id", nullable = false)
     private Person person;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "book_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "book_id", nullable = false)
     private Book book;
+
+    @Column(nullable = false)
+    private LocalDate loanDate;
+
+    @Column(nullable = false)
+    private LocalDate dueDate; // تاریخ سررسید
+
+    private LocalDate returnDate; // تاریخ بازگشت واقعی
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private LoanStatus status;
+
+    @Column(length = 1000)
+    private String notes; // یادداشت
 }

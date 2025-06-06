@@ -1,17 +1,16 @@
 package ir.iau.library.controller;
 
+import ir.iau.library.dto.BookLoanDto;
 import ir.iau.library.dto.BookLoanFilterDto;
-import ir.iau.library.dto.BookLoanRequestDto;
-import ir.iau.library.dto.BookLoanUpdateDto;
-import ir.iau.library.entity.BookLoan;
+import ir.iau.library.dto.CreateLoanRequestDto;
 import ir.iau.library.service.BookLoanService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.time.LocalDate;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/loan")
@@ -20,35 +19,20 @@ public class BookLoanController {
     @Autowired
     private BookLoanService loanService;
 
+    @GetMapping
+    public Page<BookLoanDto> listLoans(BookLoanFilterDto filter, @PageableDefault(sort = "id", direction = org.springframework.data.domain.Sort.Direction.DESC) Pageable pageable) {
+        return loanService.findAllFiltered(filter, pageable);
+    }
+
     @PostMapping
-    public ResponseEntity<BookLoan> loanBook(@RequestBody BookLoanRequestDto request) {
-        BookLoan loan = loanService.loanBook(request);
-        return ResponseEntity.status(201).body(loan);
+    public ResponseEntity<BookLoanDto> createLoan(@RequestBody CreateLoanRequestDto request) {
+        BookLoanDto createdLoan = loanService.createLoan(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdLoan);
     }
 
-    @PutMapping("/return/{loanId}")
-    public ResponseEntity<BookLoan> returnBook(
-            @PathVariable Long loanId,
-            @RequestParam("date")
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate returnDate) {
-        BookLoan updated = loanService.returnBook(loanId, returnDate);
-        return ResponseEntity.ok(updated);
+    @PutMapping("/{id}/return")
+    public ResponseEntity<BookLoanDto> returnBook(@PathVariable Long id) {
+        BookLoanDto updatedLoan = loanService.returnBook(id);
+        return ResponseEntity.ok(updatedLoan);
     }
-
-    @PostMapping("/reminders")
-    public ResponseEntity<Void> sendReminders() {
-        loanService.sendDueReminders();
-        return ResponseEntity.ok().build();
-    }
-
-    @GetMapping("/search")
-    public List<BookLoan> searchLoans(@RequestBody BookLoanFilterDto filterDto) {
-        return loanService.searchLoans(filterDto);
-    }
-
-    @PutMapping("/update")
-    public BookLoan updateLoan(@RequestBody BookLoanUpdateDto dto) {
-        return loanService.updateLoan(dto);
-    }
-
 }
