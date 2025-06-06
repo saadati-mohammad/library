@@ -1,7 +1,7 @@
 package ir.iau.library.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import ir.iau.library.dto.BookExcelRowDto;
+import ir.iau.library.dto.BookFilterDto;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.envers.Audited;
@@ -58,11 +58,28 @@ public class Book {
     @JsonIgnore
     private List<BookLoan> loans = new ArrayList<>();
 
-    public Book(BookExcelRowDto bookExcelRowDto) {
-        this.isbn10 = bookExcelRowDto.getIsbn10();
-        this.title = bookExcelRowDto.getTitle();
-        this.author = bookExcelRowDto.getAuthor();
-        this.translator = bookExcelRowDto.getTranslator();
-        this.description = bookExcelRowDto.getDescription();
+    public Book(BookFilterDto bookFilterDto) {
+        this.isbn10 = bookFilterDto.getIsbn10();
+        this.title = bookFilterDto.getTitle();
+        this.author = bookFilterDto.getAuthor();
+        this.translator = bookFilterDto.getTranslator();
+        this.description = bookFilterDto.getDescription();
+        this.publisher = bookFilterDto.getPublisher();
+        this.isbn13 = bookFilterDto.getIsbn13();
+        this.deweyDecimal = bookFilterDto.getDeweyDecimal();
+        this.congressClassification = bookFilterDto.getCongressClassification();
+        this.subject = bookFilterDto.getSubject();
+        this.summary = bookFilterDto.getSummary();
+        this.publicationDate = bookFilterDto.getPublicationDate(); // Date یا String، بستگی به نوع فیلد دارد
+        this.pageCount = bookFilterDto.getPageCount();
+        this.language = bookFilterDto.getLanguage();
+        this.edition = bookFilterDto.getEdition();
+        this.active = bookFilterDto.getActive(); // یا getActive() اگر Boolean باشد
+        this.copyCount = bookFilterDto.getCopyCount();
+        this.librarySection = bookFilterDto.getLibrarySection();
+        this.shelfCode = bookFilterDto.getShelfCode();
+        this.rowNumbers = bookFilterDto.getRowNumbers();
+        this.columnNumber = bookFilterDto.getColumnNumber();
+        this.positionNote = bookFilterDto.getPositionNote();
     }
 }

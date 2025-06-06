@@ -35,20 +35,6 @@ public class BookLoanController {
         return ResponseEntity.ok(updated);
     }
 
-//    @GetMapping("/overdue")
-//    public List<BookLoan> getOverdueLoans() {
-//        return loanService.getOverdueLoans();
-//    }
-//
-//    @GetMapping("/report")
-//    public long countLoansBetween(
-//            @RequestParam("start")
-//            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
-//            @RequestParam("end")
-//            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end) {
-//        return loanService.countLoansBetween(start, end);
-//    }
-
     @PostMapping("/reminders")
     public ResponseEntity<Void> sendReminders() {
         loanService.sendDueReminders();
