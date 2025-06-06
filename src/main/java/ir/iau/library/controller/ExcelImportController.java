@@ -1,7 +1,7 @@
 package ir.iau.library.controller;
 
 import ir.iau.library.dto.BookFilterDto;
-import ir.iau.library.dto.PersonExcelRowDto;
+import ir.iau.library.dto.PersonFilterDto;
 import ir.iau.library.service.ExcelImportService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -37,7 +37,7 @@ public class ExcelImportController {
     @PostMapping("/persons")
     public ResponseEntity<String> importPersons(@RequestPart("file") MultipartFile file) {
         try {
-            List<PersonExcelRowDto> persons = excelImportService.importPersonsFromExcel(file);
+            List<PersonFilterDto> persons = excelImportService.importPersonsFromExcel(file);
             return ResponseEntity.ok("Persons successfully imported. Total records: " + persons.size());
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error importing persons: " + e.getMessage());

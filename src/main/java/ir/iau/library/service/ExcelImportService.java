@@ -2,11 +2,12 @@ package ir.iau.library.service;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import ir.iau.library.dto.BookFilterDto;
-import ir.iau.library.dto.PersonExcelRowDto;
+import ir.iau.library.dto.PersonFilterDto;
 import ir.iau.library.entity.Book;
 import ir.iau.library.entity.Person;
 import ir.iau.library.repository.BookRepository;
 import ir.iau.library.repository.PersonRepository;
+import ir.iau.library.specification.DuplicateFieldException;
 import jakarta.transaction.Transactional;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -152,8 +153,12 @@ public class ExcelImportService {
         return true;
     }
 
-    public List<PersonExcelRowDto> importPersonsFromExcel(MultipartFile file) throws IOException, InvalidFormatException {
-        List<PersonExcelRowDto> personDtos = new ArrayList<>();
+
+
+    @Transactional // عملیات ذخیره را در یک تراکنش قرار می‌دهد
+    public List<PersonFilterDto> importPersonsFromExcel(MultipartFile file) throws IOException, InvalidFormatException {
+        List<PersonFilterDto> personDtos = new ArrayList<>();
+        DataFormatter dataFormatter = new DataFormatter(); // برای تبدیل انواع داده به رشته
 
         try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
             Sheet sheet = workbook.getSheetAt(0);
@@ -164,14 +169,62 @@ public class ExcelImportService {
                 if (row.getRowNum() == 0) continue;  // Skip header row
 
                 // Read data from each cell and convert to DTO
-                PersonExcelRowDto personDto = new PersonExcelRowDto();
-                personDto.setFirstName(row.getCell(0).getStringCellValue());
-                personDto.setLastName(row.getCell(1).getStringCellValue());
-                personDto.setEmail(row.getCell(2).getStringCellValue());
-                personDto.setPhone(row.getCell(3).getStringCellValue());
+                PersonFilterDto personDto = new PersonFilterDto();
+                personDto.setFirstName(getCellValueAsString(row.getCell(0), dataFormatter));
+                personDto.setLastName(getCellValueAsString(row.getCell(1), dataFormatter));
+                personDto.setEmail(getCellValueAsString(row.getCell(2), dataFormatter));
+                personDto.setPhone(getCellValueAsString(row.getCell(3), dataFormatter));
+                personDto.setNationalId(getCellValueAsString(row.getCell(4), dataFormatter));
+                personDto.setMembershipType(getCellValueAsString(row.getCell(5), dataFormatter));
+                personDto.setAddress(getCellValueAsString(row.getCell(6), dataFormatter));
+                String activeStr = getCellValueAsString(row.getCell(7), dataFormatter);
+
+                // Check for duplicate fields
+                if (personRepository.existsByEmail(personDto.getEmail())) {
+                    throw new DuplicateFieldException("Email", personDto.getEmail());
+                }
+
+                if (personRepository.existsByNationalId(personDto.getNationalId())) {
+                    throw new DuplicateFieldException("National ID", personDto.getNationalId());
+                }
+                if (activeStr != null) {
+                    personDto.setActive(activeStr.equalsIgnoreCase("TRUE") || activeStr.equalsIgnoreCase("فعال") || activeStr.equals("1"));
+                }
+                // Handle birthDate and membershipDate fields
+                String birthDateStr = getCellValueAsString(row.getCell(8), dataFormatter);
+                if (birthDateStr != null && !birthDateStr.isEmpty()) {
+                    try {
+                        personDto.setBirthDate(LocalDate.parse(birthDateStr, DateTimeFormatter.ISO_LOCAL_DATE)); // YYYY-MM-DD
+                    } catch (Exception e) {
+                        // Handle invalid date format, log it if necessary
+                        System.err.println("Could not parse birth date: " + birthDateStr + " at row " + row.getRowNum());
+                    }
+                }
+
+                String membershipDateFromStr = getCellValueAsString(row.getCell(9), dataFormatter);
+                if (membershipDateFromStr != null && !membershipDateFromStr.isEmpty()) {
+                    try {
+                        personDto.setMembershipDateFrom(LocalDate.parse(membershipDateFromStr, DateTimeFormatter.ISO_LOCAL_DATE)); // YYYY-MM-DD
+                    } catch (Exception e) {
+                        // Handle invalid date format, log it if necessary
+                        System.err.println("Could not parse membership date from: " + membershipDateFromStr + " at row " + row.getRowNum());
+                    }
+                }
+
+                String membershipDateToStr = getCellValueAsString(row.getCell(10), dataFormatter);
+                if (membershipDateToStr != null && !membershipDateToStr.isEmpty()) {
+                    try {
+                        personDto.setMembershipDateTo(LocalDate.parse(membershipDateToStr, DateTimeFormatter.ISO_LOCAL_DATE)); // YYYY-MM-DD
+                    } catch (Exception e) {
+                        // Handle invalid date format, log it if necessary
+                        System.err.println("Could not parse membership date to: " + membershipDateToStr + " at row " + row.getRowNum());
+                    }
+                }
+
+                // Add DTO to the list
                 personDtos.add(personDto);
 
-                // Save to DB
+                // Save to DB (if necessary)
                 Person person = new Person(personDto);
                 personRepository.save(person);
             }
@@ -179,4 +232,5 @@ public class ExcelImportService {
 
         return personDtos;
     }
+
 }
