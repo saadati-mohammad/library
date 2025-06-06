@@ -33,12 +33,6 @@ public class BookService {
         return bookRepository.save(book);
     }
 
-    // متد createBook بدون فایل، اگر هنوز استفاده می‌شود
-    public Book createBook(Book book) {
-        return bookRepository.save(book);
-    }
-
-
     public Book updateBook(Long id, Book bookDetails, MultipartFile bookCoverFile) throws IOException {
         Book book = bookRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Book not found with id " + id));
@@ -76,43 +70,15 @@ public class BookService {
         return bookRepository.save(book);
     }
 
-    // متد updateBook بدون فایل، اگر هنوز استفاده می‌شود
-    public Book updateBook(Long id, Book bookDetails) {
-        Book book = bookRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Book not found with id " + id));
-        // ... کپی کردن سایر فیلدها مثل بالا
-        book.setTitle(bookDetails.getTitle());
-        book.setAuthor(bookDetails.getAuthor());
-        book.setTranslator(bookDetails.getTranslator());
-        book.setPublisher(bookDetails.getPublisher());
-        book.setIsbn10(bookDetails.getIsbn10());
-        book.setIsbn13(bookDetails.getIsbn13());
-        book.setDescription(bookDetails.getDescription());
-        book.setDeweyDecimal(bookDetails.getDeweyDecimal());
-        book.setCongressClassification(bookDetails.getCongressClassification());
-        book.setSubject(bookDetails.getSubject());
-        book.setSummary(bookDetails.getSummary());
-        book.setPublicationDate(bookDetails.getPublicationDate());
-        book.setPageCount(bookDetails.getPageCount());
-        book.setLanguage(bookDetails.getLanguage());
-        book.setEdition(bookDetails.getEdition());
-        book.setCopyCount(bookDetails.getCopyCount());
-        book.setLibrarySection(bookDetails.getLibrarySection());
-        book.setShelfCode(bookDetails.getShelfCode());
-        book.setRowNumbers(bookDetails.getRowNumbers());
-        book.setColumnNumber(bookDetails.getColumnNumber());
-        book.setPositionNote(bookDetails.getPositionNote());
-        book.setActive(bookDetails.getActive());
-        // عدم تغییر bookCoverFile در این نسخه از متد
-        return bookRepository.save(book);
-    }
+//    public void softDeleteBook(Long id) {
+//        Book book = bookRepository.findById(id)
+//                .orElseThrow(() -> new EntityNotFoundException("Book not found with id " + id));
+//        book.setActive(false);
+//        bookRepository.save(book);
+//    }
 
-
-    public void softDeleteBook(Long id) {
-        Book book = bookRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Book not found with id " + id));
-        book.setActive(false);
-        bookRepository.save(book);
+    public void deleteBookById(Long id) {
+        bookRepository.deleteById(id);
     }
 
     public Optional<Book> getBookById(Long id) {

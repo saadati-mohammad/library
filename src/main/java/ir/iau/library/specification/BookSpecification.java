@@ -20,8 +20,6 @@ public class BookSpecification {
             // Active status is almost always applied
             if (criteria.getActive() != null) {
                 predicates.add(cb.equal(root.get("active"), criteria.getActive()));
-            } else {
-                predicates.add(cb.equal(root.get("active"), true)); // Default to active books
             }
 
             if (StringUtils.hasText(criteria.getTitle())) {

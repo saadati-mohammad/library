@@ -82,7 +82,7 @@ public class BookController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteBook(@PathVariable Long id) {
-        bookService.softDeleteBook(id);
+        bookService.deleteBookById(id);
         return ResponseEntity.noContent().build();
     }
 }
