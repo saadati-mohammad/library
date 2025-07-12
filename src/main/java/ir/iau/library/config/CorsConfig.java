@@ -12,7 +12,8 @@ public class CorsConfig implements WebMvcConfigurer {
         registry.addMapping("/api/**")
                 .allowedOrigins(
                         "http://localhost:4200", // برای توسعه محلی
-                        "https://lms-iau-ac.liara.run" // آدرس دیپلوی‌شده‌ی Angular روی لیارا
+                        "https://lms-iau-ac.liara.run", // آدرس دیپلوی‌شده‌ی Angular روی لیارا
+                        "https://lms-iau.vercel.app"
                 )
                 .allowedMethods("GET","POST","PUT","DELETE","OPTIONS")
                 .allowedHeaders("*")
