@@ -1,23 +1,19 @@
 package ir.iau.library.controller;
 
-import ir.iau.library.dto.*;
+import ir.iau.library.dto.ApiResponse;
+import ir.iau.library.dto.ConversationCriteria;
+import ir.iau.library.dto.MessageUpdateRequest;
+import ir.iau.library.dto.SearchCriteria;
 import ir.iau.library.service.MessageService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.validation.Valid;
-import java.time.LocalDateTime;
-
 @RestController
-@RequestMapping("/api/v1/messages")
+@RequestMapping("/api/messages")
 @RequiredArgsConstructor
 @Slf4j
 @CrossOrigin(origins = "*")
@@ -25,288 +21,109 @@ public class MessageController {
 
     private final MessageService messageService;
 
-    /**
-     * دریافت پیام‌های مکالمه بین دو کاربر
-     *
-     * مثال درخواست:
-     * GET /api/v1/messages/conversation?senderUsername=user1&recipientUsername=user2&page=0&size=15
-     *
-     * مثال پاسخ:
-     * {
-     *   "success": true,
-     *   "message": "Messages retrieved successfully",
-     *   "data": {
-     *     "content": [...],
-     *     "pageable": {...},
-     *     "totalElements": 25,
-     *     "totalPages": 2,
-     *     "last": false,
-     *     "first": true
-     *   },
-     *   "hasMore": true,
-     *   "totalElements": 25,
-     *   "totalPages": 2
-     * }
-     */
-    @GetMapping("/conversation")
-    @Operation(summary = "دریافت پیام‌های مکالمه", description = "دریافت پیام‌های مکالمه بین دو کاربر با صفحه‌بندی")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "پیام‌ها با موفقیت دریافت شدند"),
-            @ApiResponse(responseCode = "400", description = "پارامترهای ورودی نامعتبر"),
-            @ApiResponse(responseCode = "500", description = "خطای سرور")
-    })
-    public ResponseEntity<ir.iau.library.dto.ApiResponse<Page<MessageDto>>> getConversationMessages(
-            @Parameter(description = "نام کاربری فرستنده", required = true)
-            @RequestParam String senderUsername,
-
-            @Parameter(description = "نام کاربری گیرنده", required = true)
-            @RequestParam String recipientUsername,
-
-            @Parameter(description = "شماره صفحه")
-            @RequestParam(defaultValue = "0") int page,
-
-            @Parameter(description = "تعداد آیتم در هر صفحه")
-            @RequestParam(defaultValue = "15") int size) {
-
-        ConversationCriteria criteria = ConversationCriteria.builder()
-                .senderUsername(senderUsername)
-                .recipientUsername(recipientUsername)
-                .page(page)
-                .size(size)
-                .build();
-
-        ir.iau.library.dto.ApiResponse<Page<MessageDto>> response = messageService.getConversationMessages(criteria);
-        return ResponseEntity.ok(response);
-    }
-
-    /**
-     * ارسال پیام جدید
-     *
-     * مثال درخواست:
-     * POST /api/v1/messages/send
-     * {
-     *   "sender": "user1",
-     *   "senderFarsiTitle": "کاربر یک",
-     *   "recipient": "user2",
-     *   "recipientFarsiTitle": "کاربر دو",
-     *   "subject": "اختصاصی",
-     *   "message": "سلام، چطوری؟",
-     *   "priority": "normal",
-     *   "enableSendSms": false
-     * }
-     *
-     * مثال پاسخ:
-     * {
-     *   "success": true,
-     *   "message": "Message sent successfully",
-     *   "data": {
-     *     "id": 123,
-     *     "sender": "user1",
-     *     "senderFarsiTitle": "کاربر یک",
-     *     "recipient": "user2",
-     *     "message": "سلام، چطوری؟",
-     *     "createDate": "2024-01-15T10:30:00",
-     *     "messageStatus": "SENT"
-     *   }
-     * }
-     */
-    @PostMapping("/send")
-    @Operation(summary = "ارسال پیام جدید", description = "ارسال پیام جدید با امکانات مختلف")
-    public ResponseEntity<ir.iau.library.dto.ApiResponse<MessageDto>> sendMessage(
-            @Valid @RequestBody MessageSendRequest request) {
-
-        ir.iau.library.dto.ApiResponse<MessageDto> response = messageService.sendMessage(request);
-        return ResponseEntity.ok(response);
-    }
-
-    /**
-     * ویرایش پیام
-     *
-     * مثال درخواست:
-     * PUT /api/v1/messages/update
-     * {
-     *   "id": 123,
-     *   "message": "سلام، چطوری؟ امیدوارم حالت خوب باشه"
-     * }
-     */
-    @PutMapping("/update")
-    @Operation(summary = "ویرایش پیام", description = "ویرایش محتوای یک پیام موجود")
-    public ResponseEntity<ir.iau.library.dto.ApiResponse<MessageDto>> updateMessage(
-            @Valid @RequestBody MessageUpdateRequest request) {
-
-        ir.iau.library.dto.ApiResponse<MessageDto> response = messageService.updateMessage(request);
-        return ResponseEntity.ok(response);
-    }
-
-    /**
-     * حذف پیام
-     *
-     * مثال درخواست:
-     * DELETE /api/v1/messages/delete/123
-     *
-     * مثال پاسخ:
-     * {
-     *   "success": true,
-     *   "message": "Message deleted successfully",
-     *   "data": "Message deleted successfully"
-     * }
-     */
-    @DeleteMapping("/delete/{messageId}")
-    @Operation(summary = "حذف پیام", description = "حذف نرم یک پیام")
-    public ResponseEntity<ir.iau.library.dto.ApiResponse<String>> deleteMessage(
-            @Parameter(description = "شناسه پیام", required = true)
-            @PathVariable Long messageId) {
-
-        ir.iau.library.dto.ApiResponse<String> response = messageService.deleteMessage(messageId);
-        return ResponseEntity.ok(response);
-    }
-
-    /**
-     * جستجو در پیام‌ها
-     *
-     * مثال درخواست:
-     * GET /api/v1/messages/search?query=سلام&sender=user1&priority=high&page=0&size=10
-     *
-     * مثال پاسخ:
-     * {
-     *   "success": true,
-     *   "message": "Search completed successfully",
-     *   "data": {
-     *     "content": [...],
-     *     "totalElements": 5
-     *   },
-     *   "hasMore": false
-     * }
-     */
     @GetMapping("/search")
-    @Operation(summary = "جستجو در پیام‌ها", description = "جستجوی پیشرفته در پیام‌ها با فیلترهای مختلف")
-    public ResponseEntity<ir.iau.library.dto.ApiResponse<Page<MessageDto>>> searchMessages(
-            @Parameter(description = "کلمه کلیدی جستجو")
+    public ResponseEntity<ApiResponse> searchMessages(
             @RequestParam(required = false) String query,
-
-            @Parameter(description = "نام کاربری فرستنده")
             @RequestParam(required = false) String sender,
-
-            @Parameter(description = "نام کاربری گیرنده")
-            @RequestParam(required = false) String recipient,
-
-            @Parameter(description = "موضوع پیام")
             @RequestParam(required = false) String subject,
-
-            @Parameter(description = "اولویت پیام")
             @RequestParam(required = false) String priority,
-
-            @Parameter(description = "وضعیت فعال بودن")
-            @RequestParam(required = false) Boolean isActive,
-
-            @Parameter(description = "تاریخ شروع")
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
-
-            @Parameter(description = "تاریخ پایان")
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
-
-            @Parameter(description = "شماره صفحه")
             @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        try {
+            log.info("Search request - query: {}, sender: {}, subject: {}, priority: {}",
+                    query, sender, subject, priority);
 
-            @Parameter(description = "تعداد آیتم در هر صفحه")
-            @RequestParam(defaultValue = "15") int size) {
+            Pageable pageable = PageRequest.of(page, size);
 
-        SearchCriteria criteria = SearchCriteria.builder()
-                .query(query)
-                .sender(sender)
-                .recipient(recipient)
-                .subject(subject)
-                .priority(priority)
-                .isActive(isActive)
-                .startDate(startDate)
-                .endDate(endDate)
-                .page(page)
-                .size(size)
-                .build();
+            SearchCriteria criteria = new SearchCriteria();
+            criteria.setQuery(query);
+            criteria.setSender(sender);
+            criteria.setSubject(subject);
+            criteria.setPriority(priority);
+            criteria.setPage(page);
+            criteria.setSize(size);
 
-        ir.iau.library.dto.ApiResponse<Page<MessageDto>> response = messageService.searchMessages(criteria);
-        return ResponseEntity.ok(response);
+            ApiResponse response = messageService.searchMessages(criteria);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error searching messages: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponse.error("خطا در جستجوی پیام‌ها: " + e.getMessage()));
+        }
     }
 
-    /**
-     * دریافت پیام‌های ارسال شده کاربر
-     */
-    @GetMapping("/sent")
-    @Operation(summary = "پیام‌های ارسال شده", description = "دریافت لیست پیام‌های ارسال شده توسط کاربر")
-    public ResponseEntity<ir.iau.library.dto.ApiResponse<Page<MessageDto>>> getSentMessages(
-            @Parameter(description = "نام کاربری", required = true)
-            @RequestParam String username,
-
+    @GetMapping("/conversation")
+    public ResponseEntity<ApiResponse> getConversationMessages(
+            @RequestParam String senderUsername,
+            @RequestParam String recipientUsername,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "15") int size) {
+            @RequestParam(defaultValue = "15") int size
+    ) {
+        try {
+            log.info("Getting conversation between {} and {}", senderUsername, recipientUsername);
 
-        ir.iau.library.dto.ApiResponse<Page<MessageDto>> response = messageService.getSentMessages(username, page, size);
-        return ResponseEntity.ok(response);
+            ConversationCriteria criteria = new ConversationCriteria();
+            criteria.setSenderUsername(senderUsername);
+            criteria.setRecipientUsername(recipientUsername);
+            criteria.setPage(page);
+            criteria.setSize(size);
+
+            ApiResponse response = messageService.getConversationMessages(criteria);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error getting conversation: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponse.error("خطا در دریافت مکالمه: " + e.getMessage()));
+        }
     }
 
-    /**
-     * دریافت پیام‌های دریافت شده کاربر
-     */
-    @GetMapping("/received")
-    @Operation(summary = "پیام‌های دریافت شده", description = "دریافت لیست پیام‌های دریافت شده توسط کاربر")
-    public ResponseEntity<ir.iau.library.dto.ApiResponse<Page<MessageDto>>> getReceivedMessages(
-            @Parameter(description = "نام کاربری", required = true)
-            @RequestParam String username,
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse> updateMessage(@PathVariable Long id, @RequestBody String newMessage) {
+        try {
+            log.info("Updating message {} with new content", id);
 
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "15") int size) {
+            MessageUpdateRequest request = new MessageUpdateRequest();
+            request.setId(id);
+            request.setMessage(newMessage);
 
-        ir.iau.library.dto.ApiResponse<Page<MessageDto>> response = messageService.getReceivedMessages(username, page, size);
-        return ResponseEntity.ok(response);
+            ApiResponse response = messageService.updateMessage(request);
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("Error updating message: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponse.error("خطا در به‌روزرسانی پیام: " + e.getMessage()));
+        }
     }
 
-    /**
-     * دریافت جزئیات یک پیام
-     */
-    @GetMapping("/{messageId}")
-    @Operation(summary = "جزئیات پیام", description = "دریافت جزئیات کامل یک پیام")
-    public ResponseEntity<ir.iau.library.dto.ApiResponse<MessageDto>> getMessageById(
-            @PathVariable Long messageId) {
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse> deleteMessage(@PathVariable Long id) {
+        try {
+            log.info("Deleting message {}", id);
 
-        ir.iau.library.dto.ApiResponse<MessageDto> response = messageService.getMessageById(messageId);
-        return ResponseEntity.ok(response);
+            ApiResponse response = messageService.deleteMessage(id);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error deleting message: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponse.error("خطا در حذف پیام: " + e.getMessage()));
+        }
     }
 
-    /**
-     * علامت‌گذاری پیام به عنوان خوانده شده
-     */
-    @PostMapping("/mark-read/{messageId}")
-    @Operation(summary = "علامت‌گذاری به عنوان خوانده شده", description = "علامت‌گذاری یک پیام به عنوان خوانده شده")
-    public ResponseEntity<ir.iau.library.dto.ApiResponse<String>> markAsRead(
-            @PathVariable Long messageId) {
+    @PostMapping("/{id}/mark-read")
+    public ResponseEntity<ApiResponse> markAsRead(@PathVariable Long id) {
+        try {
+            log.info("Marking message {} as read", id);
 
-        ir.iau.library.dto.ApiResponse<String> response = messageService.markAsRead(messageId);
-        return ResponseEntity.ok(response);
-    }
-
-    /**
-     * دریافت آمار پیام‌ها
-     *
-     * مثال پاسخ:
-     * {
-     *   "success": true,
-     *   "data": {
-     *     "sentCount": 45,
-     *     "receivedCount": 32,
-     *     "unreadCount": 5,
-     *     "totalCount": 77,
-     *     "todayCount": 8,
-     *     "highPriorityCount": 3
-     *   }
-     * }
-     */
-    @GetMapping("/stats")
-    @Operation(summary = "آمار پیام‌ها", description = "دریافت آمار کامل پیام‌های کاربر")
-    public ResponseEntity<ir.iau.library.dto.ApiResponse<MessageStats>> getMessageStats(
-            @Parameter(description = "نام کاربری", required = true)
-            @RequestParam String username) {
-
-        ir.iau.library.dto.ApiResponse<MessageStats> response = messageService.getMessageStats(username);
-        return ResponseEntity.ok(response);
+            ApiResponse response = messageService.markAsRead(id);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error marking message as read: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponse.error("خطا در علامت‌گذاری پیام: " + e.getMessage()));
+        }
     }
 }
