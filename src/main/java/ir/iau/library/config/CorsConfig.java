@@ -31,6 +31,7 @@ public class CorsConfig implements WebMvcConfigurer {
     // لیست fallback برای وقتی که properties خالی باشد
     private static final String[] DEFAULT_ALLOWED_ORIGINS = {
             "http://localhost:4200",            // توسعه محلی
+            "http://localhost",                 // دیپلوی استاتیک
             "https://lms-iau-ac.liara.run",     // لیارا
             "https://lms-iau.vercel.app"        // ورسل
     };
