@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 public class LibraryApplication {
 
 	public static void main(String[] args) {
+        ir.iau.library.config.KeyPromptValidator.verify();
 		SpringApplication.run(LibraryApplication.class, args);
 	}
 
